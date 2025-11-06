@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Input Data - Timetable Scheduler{% endblock %}
+
+{% block content %}
+<h2 style="color: #667eea; margin-bottom: 30px;">Input Data</h2>
+
+<div id="message-container"></div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <div>
+        <h3 style="color: #333; margin-bottom: 20px;">Upload JSON File</h3>
+        <div class="form-group">
+            <label for="dataFile">Select JSON file with timetable data:</label>
+            <input type="file" id="dataFile" accept=".json">
+        </div>
+        <button onclick="uploadFile()" class="btn">Upload File</button>
+        
+        <div style="margin-top: 30px;">
+            <h4 style="color: #333; margin-bottom: 15px;">Example JSON Structure:</h4>
+            <a href="#" onclick="downloadExample(); return false;" class="btn btn-secondary">Download Example</a>
+        </div>
+    </div>
+    
+    <div>
+        <h3 style="color: #333; margin-bottom: 20px;">Enter JSON Data</h3>
+        <div class="form-group">
+            <label for="jsonInput">Paste JSON data:</label>
+            <textarea id="jsonInput" placeholder='{"lecturers": [...], "rooms": [...], ...}'></textarea>
+        </div>
+        <button onclick="submitJSON()" class="btn">Load Data</button>
+    </div>
+</div>
+
+<div style="margin-top: 40px;">
+    <h3 style="color: #333; margin-bottom: 20px;">Current Data</h3>
+    <button onclick="loadCurrentData()" class="btn btn-secondary">Refresh</button>
+    <div id="current-data" style="margin-top: 20px;"></div>
+</div>
+
+<script>
+function showMessage(message, type) {
+    const container = document.getElementById('message-container');
+    container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    setTimeout(() => container.innerHTML = '', 5000);
+}
+
+async function uploadFile() {
+    const fileInput = document.getElementById('dataFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showMessage('Please select a file', 'warning');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/api/data/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage(result.message, 'success');
+            loadCurrentData();
+        } else {
+            showMessage(result.message, 'error');
+        }
+    } catch (error) {
+        showMessage('Error uploading file: ' + error.message, 'error');
+    }
+}
+
+async function submitJSON() {
+    const jsonInput = document.getElementById('jsonInput').value;
+    
+    if (!jsonInput.trim()) {
+        showMessage('Please enter JSON data', 'warning');
+        return;
+    }
+    
+    try {
+        const data = JSON.parse(jsonInput);
+        
+        const response = await fetch('/data/input', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showMessage(result.message, 'success');
+            loadCurrentData();
+        } else {
+            showMessage(result.message, 'error');
+        }
+    } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+    }
+}
+
+async function loadCurrentData() {
+    try {
+        const response = await fetch('/api/data/current');
+        const data = await response.json();
+        
+        let html = '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">';
+        
+        // Lecturers
+        html += '<div><h4>Lecturers (' + data.lecturers.length + ')</h4>';
+        if (data.lecturers.length > 0) {
+            html += '<table><tr><th>ID</th><th>Name</th></tr>';
+            data.lecturers.forEach(l => {
+                html += `<tr><td>${l.id}</td><td>${l.name}</td></tr>`;
+            });
+            html += '</table>';
+        }
+        html += '</div>';
+        
+        // Rooms
+        html += '<div><h4>Rooms (' + data.rooms.length + ')</h4>';
+        if (data.rooms.length > 0) {
+            html += '<table><tr><th>ID</th><th>Name</th><th>Capacity</th></tr>';
+            data.rooms.forEach(r => {
+                html += `<tr><td>${r.id}</td><td>${r.name}</td><td>${r.capacity}</td></tr>`;
+            });
+            html += '</table>';
+        }
+        html += '</div>';
+        
+        // Subjects
+        html += '<div><h4>Subjects (' + data.subjects.length + ')</h4>';
+        if (data.subjects.length > 0) {
+            html += '<table><tr><th>Name</th><th>Lecturer</th><th>Hours</th></tr>';
+            data.subjects.forEach(s => {
+                html += `<tr><td>${s.name}</td><td>${s.lecturer}</td><td>${s.required_hours}</td></tr>`;
+            });
+            html += '</table>';
+        }
+        html += '</div>';
+        
+        // Blocks
+        html += '<div><h4>Time Blocks (' + data.blocks.length + ')</h4>';
+        if (data.blocks.length > 0) {
+            html += '<table><tr><th>Day</th><th>Time</th><th>Duration</th></tr>';
+            data.blocks.forEach(b => {
+                html += `<tr><td>${b.day}</td><td>${b.start_time}-${b.end_time}</td><td>${b.duration_hours}h</td></tr>`;
+            });
+            html += '</table>';
+        }
+        html += '</div>';
+        
+        html += '</div>';
+        
+        document.getElementById('current-data').innerHTML = html;
+    } catch (error) {
+        showMessage('Error loading current data: ' + error.message, 'error');
+    }
+}
+
+function downloadExample() {
+    const example = {
+        "lecturers": [
+            {"id": "L1", "name": "Dr. Smith"},
+            {"id": "L2", "name": "Prof. Johnson"}
+        ],
+        "rooms": [
+            {"id": "R1", "name": "Room 101", "capacity": 30},
+            {"id": "R2", "name": "Room 102", "capacity": 50}
+        ],
+        "subjects": [
+            {
+                "id": "S1",
+                "name": "Anatomy",
+                "lecturer_id": "L1",
+                "required_hours": 4,
+                "min_students": 20,
+                "max_students": 30
+            },
+            {
+                "id": "S2",
+                "name": "Physiology",
+                "lecturer_id": "L2",
+                "required_hours": 3,
+                "min_students": 15,
+                "max_students": 40
+            }
+        ],
+        "blocks": [
+            {
+                "id": "B1",
+                "day": "Monday",
+                "start_time": "09:00",
+                "end_time": "10:00",
+                "duration_hours": 1
+            },
+            {
+                "id": "B2",
+                "day": "Monday",
+                "start_time": "10:00",
+                "end_time": "11:00",
+                "duration_hours": 1
+            },
+            {
+                "id": "B3",
+                "day": "Tuesday",
+                "start_time": "09:00",
+                "end_time": "10:00",
+                "duration_hours": 1
+            }
+        ]
+    };
+    
+    const blob = new Blob([JSON.stringify(example, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'example_data.json';
+    a.click();
+}
+
+// Load current data on page load
+document.addEventListener('DOMContentLoaded', loadCurrentData);
+</script>
+{% endblock %}

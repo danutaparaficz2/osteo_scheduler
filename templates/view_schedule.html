@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}View Schedule - Timetable Scheduler{% endblock %}
+
+{% block content %}
+<h2 style="color: #667eea; margin-bottom: 30px;">View Schedule</h2>
+
+<div id="message-container"></div>
+
+<div style="margin-bottom: 30px;">
+    <button onclick="exportPDF('standard')" class="btn">Export as PDF</button>
+    <button onclick="exportPDF('by_lecturer')" class="btn btn-secondary">Export by Lecturer (PDF)</button>
+    <button onclick="exportJSON()" class="btn btn-secondary">Export as JSON</button>
+</div>
+
+<div id="schedule-container">
+    <p style="color: #666;">Loading schedule...</p>
+</div>
+
+<script>
+function showMessage(message, type) {
+    const container = document.getElementById('message-container');
+    container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+    setTimeout(() => container.innerHTML = '', 5000);
+}
+
+async function loadSchedule() {
+    try {
+        const response = await fetch('/api/schedule/current');
+        const data = await response.json();
+        
+        if (!data.success) {
+            document.getElementById('schedule-container').innerHTML = 
+                '<div class="alert alert-warning">No schedule generated yet. Please generate a schedule first.</div>';
+            return;
+        }
+        
+        displaySchedule(data);
+    } catch (error) {
+        showMessage('Error loading schedule: ' + error.message, 'error');
+    }
+}
+
+function displaySchedule(data) {
+    const container = document.getElementById('schedule-container');
+    let html = '';
+    
+    // Group entries by week
+    const weekGroups = {};
+    data.entries.forEach(entry => {
+        if (!weekGroups[entry.week]) {
+            weekGroups[entry.week] = [];
+        }
+        weekGroups[entry.week].push(entry);
+    });
+    
+    // Display each week
+    Object.keys(weekGroups).sort((a, b) => parseInt(a) - parseInt(b)).forEach(week => {
+        html += `<div style="margin-bottom: 40px;">`;
+        html += `<h3 style="color: #667eea; margin-bottom: 20px;">Week ${week}</h3>`;
+        
+        // Group by day
+        const dayGroups = {};
+        weekGroups[week].forEach(entry => {
+            if (!dayGroups[entry.day]) {
+                dayGroups[entry.day] = [];
+            }
+            dayGroups[entry.day].push(entry);
+        });
+        
+        // Display each day
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        days.forEach(day => {
+            if (dayGroups[day]) {
+                html += `<h4 style="color: #333; margin-top: 20px; margin-bottom: 10px;">${day}</h4>`;
+                html += '<table>';
+                html += '<tr><th>Time</th><th>Subject</th><th>Lecturer</th><th>Room</th><th>Status</th></tr>';
+                
+                dayGroups[day].sort((a, b) => a.start_time.localeCompare(b.start_time)).forEach(entry => {
+                    const status = entry.is_fixed ? '🔒 Fixed' : '📝 Regular';
+                    html += `
+                        <tr>
+                            <td>${entry.start_time} - ${entry.end_time}</td>
+                            <td><strong>${entry.subject_name}</strong></td>
+                            <td>${entry.lecturer}</td>
+                            <td>${entry.room_name}</td>
+                            <td>${status}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</table>';
+            }
+        });
+        
+        html += '</div>';
+    });
+    
+    if (html === '') {
+        html = '<div class="alert alert-warning">No entries in the schedule.</div>';
+    }
+    
+    container.innerHTML = html;
+}
+
+async function exportPDF(type) {
+    try {
+        const response = await fetch('/api/schedule/export/pdf', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: 'Timetable Schedule',
+                type: type
+            })
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'timetable.pdf';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showMessage('PDF exported successfully', 'success');
+        } else {
+            showMessage('Error exporting PDF', 'error');
+        }
+    } catch (error) {
+        showMessage('Error exporting PDF: ' + error.message, 'error');
+    }
+}
+
+async function exportJSON() {
+    try {
+        const response = await fetch('/api/schedule/export/json');
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'timetable.json';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showMessage('JSON exported successfully', 'success');
+        } else {
+            showMessage('Error exporting JSON', 'error');
+        }
+    } catch (error) {
+        showMessage('Error exporting JSON: ' + error.message, 'error');
+    }
+}
+
+// Load schedule on page load
+document.addEventListener('DOMContentLoaded', loadSchedule);
+</script>
+{% endblock %}
