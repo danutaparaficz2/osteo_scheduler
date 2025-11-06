@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule View - Osteo Scheduler{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Schedule View</h2>
+    <div class="grid grid-2">
+        <div>
+            <button class="btn btn-success" onclick="generateSchedule()">Generate Schedule</button>
+            <button class="btn" onclick="loadSchedule()">Refresh</button>
+        </div>
+        <div style="text-align: right;">
+            <label for="viewType">Export View: </label>
+            <select id="viewType">
+                <option value="weekly">Weekly View</option>
+                <option value="by_room">By Room</option>
+                <option value="by_lecturer">By Lecturer</option>
+            </select>
+            <button class="btn btn-secondary" onclick="exportPDF()">Export PDF</button>
+        </div>
+    </div>
+    <div id="scheduleStats" style="margin-top: 1rem;"></div>
+</div>
+
+<div class="card">
+    <h2>Schedule Details</h2>
+    <div id="scheduleContainer">
+        <p>No schedule loaded. Click "Generate Schedule" or "Refresh" to view.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Load schedule on page load
+    window.addEventListener('DOMContentLoaded', () => {
+        loadSchedule();
+    });
+    
+    async function generateSchedule() {
+        showAlert('Generating schedule... This may take a moment.', 'info');
+        try {
+            const data = await fetchJSON('/api/generate-schedule', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    max_attempts: 1000,
+                    randomize: true
+                })
+            });
+            showAlert(`Schedule generated successfully! ${data.session_count} sessions created.`, 'success');
+            loadSchedule();
+        } catch (error) {
+            console.error('Failed to generate schedule:', error);
+        }
+    }
+    
+    async function loadSchedule() {
+        try {
+            const data = await fetchJSON('/api/schedule');
+            displaySchedule(data.sessions);
+        } catch (error) {
+            console.error('Failed to load schedule:', error);
+            document.getElementById('scheduleContainer').innerHTML = 
+                '<p>No schedule available. Please generate a schedule first.</p>';
+        }
+    }
+    
+    function displaySchedule(sessions) {
+        if (sessions.length === 0) {
+            document.getElementById('scheduleContainer').innerHTML = '<p>No sessions in schedule.</p>';
+            return;
+        }
+        
+        // Display statistics
+        const weeks = new Set(sessions.map(s => `${s.week_number}-${s.year}`));
+        const rooms = new Set(sessions.map(s => s.room_id));
+        const subjects = new Set(sessions.map(s => s.subject_id));
+        
+        document.getElementById('scheduleStats').innerHTML = `
+            <div class="alert alert-info">
+                <strong>Statistics:</strong> 
+                ${sessions.length} sessions scheduled | 
+                ${weeks.size} weeks | 
+                ${rooms.size} rooms | 
+                ${subjects.size} subjects
+            </div>
+        `;
+        
+        // Group sessions by week
+        const sessionsByWeek = {};
+        sessions.forEach(session => {
+            const weekKey = `Week ${session.week_number}, ${session.year}`;
+            if (!sessionsByWeek[weekKey]) {
+                sessionsByWeek[weekKey] = [];
+            }
+            sessionsByWeek[weekKey].push(session);
+        });
+        
+        // Display sessions grouped by week
+        let html = '';
+        Object.keys(sessionsByWeek).sort().forEach(weekKey => {
+            html += `<h3>${weekKey}</h3>`;
+            html += '<table><thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>Room</th><th>Lecturers</th><th>Duration</th><th>Actions</th></tr></thead><tbody>';
+            
+            // Sort sessions by day and time
+            const weekSessions = sessionsByWeek[weekKey].sort((a, b) => {
+                const dayOrder = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+                const dayCompare = dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
+                if (dayCompare !== 0) return dayCompare;
+                if (a.start_hour !== b.start_hour) return a.start_hour - b.start_hour;
+                return a.start_minute - b.start_minute;
+            });
+            
+            weekSessions.forEach((session, index) => {
+                const fixedBadge = session.is_fixed ? '<span style="background: #f39c12; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8em;">FIXED</span> ' : '';
+                html += `<tr>
+                    <td>${session.day}</td>
+                    <td>${String(session.start_hour).padStart(2, '0')}:${String(session.start_minute).padStart(2, '0')}</td>
+                    <td>${fixedBadge}${session.subject_name}</td>
+                    <td>${session.room_name}</td>
+                    <td>${session.lecturers.join(', ')}</td>
+                    <td>${session.duration_minutes} min</td>
+                    <td>
+                        ${!session.is_fixed ? `<button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.9rem;" onclick="deleteSession(${index})">Remove</button>` : ''}
+                    </td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+        });
+        
+        document.getElementById('scheduleContainer').innerHTML = html;
+    }
+    
+    async function deleteSession(sessionIndex) {
+        if (!confirm('Are you sure you want to remove this session?')) return;
+        
+        try {
+            await fetchJSON('/api/schedule/session', {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({session_index: sessionIndex})
+            });
+            showAlert('Session removed', 'success');
+            loadSchedule();
+        } catch (error) {
+            console.error('Failed to delete session:', error);
+        }
+    }
+    
+    async function exportPDF() {
+        const viewType = document.getElementById('viewType').value;
+        
+        showAlert('Generating PDF...', 'info');
+        
+        try {
+            const response = await fetch('/api/export-pdf', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({view_type: viewType})
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to generate PDF');
+            }
+            
+            // Download the PDF
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `schedule_${new Date().toISOString().slice(0,10)}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showAlert('PDF exported successfully', 'success');
+        } catch (error) {
+            console.error('Failed to export PDF:', error);
+            showAlert('Failed to export PDF: ' + error.message, 'error');
+        }
+    }
+</script>
+{% endblock %}
