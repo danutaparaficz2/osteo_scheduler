@@ -36,7 +36,9 @@ def data_input():
             data_manager.load_from_json(data)
             return jsonify({'success': True, 'message': 'Data loaded successfully'})
         except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 400
+            # Log the full error server-side, but don't expose details to user
+            app.logger.error(f"Error loading data from JSON: {str(e)}")
+            return jsonify({'success': False, 'message': 'Error loading data. Please check your JSON format.'}), 400
     
     return render_template('data_input.html')
 
@@ -57,7 +59,9 @@ def upload_data():
             data_manager.load_from_json(data)
             return jsonify({'success': True, 'message': 'Data uploaded successfully'})
         except Exception as e:
-            return jsonify({'success': False, 'message': f'Error loading data: {str(e)}'}), 400
+            # Log the full error server-side, but don't expose details to user
+            app.logger.error(f"Error uploading file: {str(e)}")
+            return jsonify({'success': False, 'message': 'Error loading data file. Please check the format.'}), 400
     
     return jsonify({'success': False, 'message': 'Invalid file type'}), 400
 
@@ -150,7 +154,9 @@ def generate_schedule():
             return jsonify({'success': True, 'message': 'Timetable generated successfully'})
         
         except Exception as e:
-            return jsonify({'success': False, 'message': str(e)}), 400
+            # Log the full error server-side, but don't expose details to user
+            app.logger.error(f"Error generating timetable: {str(e)}")
+            return jsonify({'success': False, 'message': 'Error generating schedule. Please check your data.'}), 400
     
     return render_template('generate_schedule.html')
 
@@ -224,7 +230,9 @@ def export_pdf():
         )
     
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        # Log the full error server-side, but don't expose details to user
+        app.logger.error(f"Error exporting timetable to PDF: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error exporting PDF. Please try again.'}), 500
 
 
 @app.route('/api/schedule/export/json', methods=['GET'])
@@ -247,7 +255,9 @@ def export_json():
         )
     
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        # Log the full error server-side, but don't expose details to user
+        app.logger.error(f"Error exporting timetable to JSON: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error exporting JSON. Please try again.'}), 500
 
 
 if __name__ == '__main__':
@@ -255,4 +265,7 @@ if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static', exist_ok=True)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Only enable debug mode if explicitly set via environment variable
+    # Never use debug=True in production!
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)
