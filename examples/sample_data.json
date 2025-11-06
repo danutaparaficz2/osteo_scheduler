@@ -1,0 +1,249 @@
+{
+  "lecturers": [
+    {
+      "id": "L1",
+      "name": "Dr. Sarah Thompson"
+    },
+    {
+      "id": "L2",
+      "name": "Prof. Michael Chen"
+    },
+    {
+      "id": "L3",
+      "name": "Dr. Emily Rodriguez"
+    }
+  ],
+  "rooms": [
+    {
+      "id": "R1",
+      "name": "Lecture Hall A",
+      "capacity": 50
+    },
+    {
+      "id": "R2",
+      "name": "Lecture Hall B",
+      "capacity": 40
+    },
+    {
+      "id": "R3",
+      "name": "Seminar Room 1",
+      "capacity": 25
+    },
+    {
+      "id": "R4",
+      "name": "Laboratory 1",
+      "capacity": 30
+    }
+  ],
+  "subjects": [
+    {
+      "id": "S1",
+      "name": "Osteopathic Principles",
+      "lecturer_id": "L1",
+      "required_hours": 4,
+      "min_students": 20,
+      "max_students": 50
+    },
+    {
+      "id": "S2",
+      "name": "Anatomy and Physiology",
+      "lecturer_id": "L2",
+      "required_hours": 6,
+      "min_students": 15,
+      "max_students": 40
+    },
+    {
+      "id": "S3",
+      "name": "Clinical Practice",
+      "lecturer_id": "L3",
+      "required_hours": 3,
+      "min_students": 10,
+      "max_students": 25
+    },
+    {
+      "id": "S4",
+      "name": "Musculoskeletal System",
+      "lecturer_id": "L1",
+      "required_hours": 4,
+      "min_students": 20,
+      "max_students": 45
+    }
+  ],
+  "blocks": [
+    {
+      "id": "B1",
+      "day": "Monday",
+      "start_time": "09:00",
+      "end_time": "10:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B2",
+      "day": "Monday",
+      "start_time": "10:00",
+      "end_time": "11:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B3",
+      "day": "Monday",
+      "start_time": "11:00",
+      "end_time": "12:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B4",
+      "day": "Monday",
+      "start_time": "14:00",
+      "end_time": "15:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B5",
+      "day": "Monday",
+      "start_time": "15:00",
+      "end_time": "16:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B6",
+      "day": "Tuesday",
+      "start_time": "09:00",
+      "end_time": "10:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B7",
+      "day": "Tuesday",
+      "start_time": "10:00",
+      "end_time": "11:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B8",
+      "day": "Tuesday",
+      "start_time": "11:00",
+      "end_time": "12:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B9",
+      "day": "Tuesday",
+      "start_time": "14:00",
+      "end_time": "15:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B10",
+      "day": "Tuesday",
+      "start_time": "15:00",
+      "end_time": "16:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B11",
+      "day": "Wednesday",
+      "start_time": "09:00",
+      "end_time": "10:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B12",
+      "day": "Wednesday",
+      "start_time": "10:00",
+      "end_time": "11:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B13",
+      "day": "Wednesday",
+      "start_time": "11:00",
+      "end_time": "12:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B14",
+      "day": "Wednesday",
+      "start_time": "14:00",
+      "end_time": "15:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B15",
+      "day": "Wednesday",
+      "start_time": "15:00",
+      "end_time": "16:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B16",
+      "day": "Thursday",
+      "start_time": "09:00",
+      "end_time": "10:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B17",
+      "day": "Thursday",
+      "start_time": "10:00",
+      "end_time": "11:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B18",
+      "day": "Thursday",
+      "start_time": "11:00",
+      "end_time": "12:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B19",
+      "day": "Thursday",
+      "start_time": "14:00",
+      "end_time": "15:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B20",
+      "day": "Thursday",
+      "start_time": "15:00",
+      "end_time": "16:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B21",
+      "day": "Friday",
+      "start_time": "09:00",
+      "end_time": "10:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B22",
+      "day": "Friday",
+      "start_time": "10:00",
+      "end_time": "11:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B23",
+      "day": "Friday",
+      "start_time": "11:00",
+      "end_time": "12:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B24",
+      "day": "Friday",
+      "start_time": "14:00",
+      "end_time": "15:00",
+      "duration_hours": 1
+    },
+    {
+      "id": "B25",
+      "day": "Friday",
+      "start_time": "15:00",
+      "end_time": "16:00",
+      "duration_hours": 1
+    }
+  ]
+}
