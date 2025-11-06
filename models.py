@@ -81,12 +81,21 @@ class Lecturer:
     
     def is_available(self, slot: TimeSlot) -> bool:
         """Check if lecturer is available during a given time slot."""
-        return any(
-            avail_slot.day == slot.day and 
-            avail_slot.start_hour == slot.start_hour and
-            avail_slot.start_minute == slot.start_minute
-            for avail_slot in self.available_slots
-        )
+        for avail_slot in self.available_slots:
+            if avail_slot.day != slot.day:
+                continue
+            
+            # Check if the requested slot fits within the available slot
+            avail_start = avail_slot.start_hour * 60 + avail_slot.start_minute
+            avail_end = avail_start + avail_slot.duration_minutes
+            slot_start = slot.start_hour * 60 + slot.start_minute
+            slot_end = slot_start + slot.duration_minutes
+            
+            # Available slot must completely contain the requested slot
+            if avail_start <= slot_start and slot_end <= avail_end:
+                return True
+        
+        return False
 
 
 @dataclass
