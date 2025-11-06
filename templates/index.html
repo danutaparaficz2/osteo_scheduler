@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Osteo Scheduler{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Welcome to Osteo Scheduler</h2>
+    <p>A comprehensive timetable scheduling system for educational institutions.</p>
+    
+    <h3 style="margin-top: 2rem;">Features:</h3>
+    <ul style="margin-left: 2rem; margin-top: 1rem;">
+        <li><strong>Data Model:</strong> Structure your scheduling data including Subjects, Lecturers, Blocks, Weeks, Rooms, and Availability</li>
+        <li><strong>Scheduling Algorithm:</strong> Automated schedule generation using constraint satisfaction that handles room limits, lecturer conflicts, and fixed appointments</li>
+        <li><strong>User Interface:</strong> Intuitive web interface for data input, schedule viewing, and manual adjustments</li>
+        <li><strong>PDF Export:</strong> Export your schedule in multiple formats (weekly, by room, by lecturer)</li>
+    </ul>
+    
+    <h3 style="margin-top: 2rem;">Getting Started:</h3>
+    <div class="grid grid-3" style="margin-top: 1rem;">
+        <div class="card">
+            <h4>1. Setup Data</h4>
+            <p>Define your lecturers, rooms, subjects, and time blocks.</p>
+            <a href="/setup" class="btn" style="margin-top: 1rem;">Go to Setup</a>
+        </div>
+        <div class="card">
+            <h4>2. Generate Schedule</h4>
+            <p>Use the automated algorithm to create an optimal timetable.</p>
+            <button class="btn" style="margin-top: 1rem;" onclick="generateSchedule()">Generate</button>
+        </div>
+        <div class="card">
+            <h4>3. View & Export</h4>
+            <p>Review your schedule and export as PDF.</p>
+            <a href="/schedule" class="btn" style="margin-top: 1rem;">View Schedule</a>
+        </div>
+    </div>
+    
+    <div style="margin-top: 2rem; padding: 1rem; background: #fff3cd; border-radius: 4px;">
+        <strong>Quick Start:</strong> 
+        <button class="btn btn-secondary" onclick="initializeSampleData()">Load Sample Data</button>
+        <span style="margin-left: 1rem;">Load pre-configured sample data to quickly test the system.</span>
+    </div>
+</div>
+
+<div class="card">
+    <h2>System Architecture</h2>
+    <div class="grid grid-3">
+        <div>
+            <h4>Data Model</h4>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Subjects</li>
+                <li>Lecturers</li>
+                <li>Rooms</li>
+                <li>Weeks</li>
+                <li>Blocks</li>
+                <li>Time Slots</li>
+            </ul>
+        </div>
+        <div>
+            <h4>Constraints</h4>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Room capacity</li>
+                <li>Lecturer availability</li>
+                <li>Time conflicts</li>
+                <li>Required features</li>
+                <li>Preferred days</li>
+            </ul>
+        </div>
+        <div>
+            <h4>Export Options</h4>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                <li>Weekly view</li>
+                <li>By room</li>
+                <li>By lecturer</li>
+                <li>PDF format</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function initializeSampleData() {
+        try {
+            const data = await fetchJSON('/api/initialize-sample-data', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'}
+            });
+            showAlert(`Sample data loaded: ${data.lecturers} lecturers, ${data.rooms} rooms, ${data.subjects} subjects`, 'success');
+        } catch (error) {
+            console.error('Failed to initialize sample data:', error);
+        }
+    }
+    
+    async function generateSchedule() {
+        showAlert('Generating schedule... This may take a moment.', 'info');
+        try {
+            const data = await fetchJSON('/api/generate-schedule', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    max_attempts: 1000,
+                    randomize: true
+                })
+            });
+            showAlert(`Schedule generated successfully! ${data.session_count} sessions created.`, 'success');
+            setTimeout(() => window.location.href = '/schedule', 2000);
+        } catch (error) {
+            console.error('Failed to generate schedule:', error);
+        }
+    }
+</script>
+{% endblock %}
