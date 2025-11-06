@@ -286,9 +286,11 @@ def generate_schedule():
             }), 400
     
     except Exception as e:
+        # Log the error internally but don't expose stack trace details
+        app.logger.error(f'Schedule generation error: {str(e)}')
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': 'An error occurred while generating the schedule. Please check your input data and try again.'
         }), 500
 
 
@@ -467,4 +469,6 @@ def initialize_sample_data():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Get debug mode from environment variable, default to False for production
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)

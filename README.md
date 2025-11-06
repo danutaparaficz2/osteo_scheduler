@@ -45,11 +45,22 @@ pip install -r requirements.txt
 
 3. **Run the application**:
 ```bash
+# For development (enables debug mode)
+export FLASK_DEBUG=true
+python app.py
+
+# For production (debug mode disabled by default)
 python app.py
 ```
 
 4. **Access the web interface**:
 Open your browser and navigate to `http://localhost:5000`
+
+## Security Notes
+
+- **Production Deployment**: Debug mode is disabled by default. Never enable debug mode in production.
+- **Secret Key**: Change the default secret key in production by setting the `SECRET_KEY` environment variable.
+- **Web Server**: For production, use a production WSGI server like Gunicorn instead of Flask's development server.
 
 ## Quick Start
 
