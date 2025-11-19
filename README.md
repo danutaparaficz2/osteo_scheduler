@@ -11,6 +11,11 @@ A comprehensive, semi-automated timetable scheduling system designed to efficien
   - Fixed appointments support
   - Block structure compliance
   - Availability constraints
+- **📅 NEW: Lecturer Time Restrictions**: Advanced date-based availability management:
+  - Specify available dates and date ranges
+  - Morning (8am-12pm) and afternoon (12pm-6pm) time periods
+  - Unavailable dates and exceptions
+  - JSON configuration support
 - **User-Friendly Interface**: Web-based UI for:
   - Data input via JSON files or direct entry
   - Schedule viewing and visualization
@@ -122,8 +127,31 @@ The scheduler validates:
 - **Room Capacity**: Ensures room capacity meets subject requirements
 - **Room Availability**: Checks if rooms are available at scheduled times
 - **Lecturer Availability**: Verifies lecturer availability for time slots
+- **Date & Time Restrictions**: Validates lecturer availability on specific dates and times of day
 - **Conflict Prevention**: Prevents double-booking of rooms or lecturers
 - **Fixed Entries**: Respects pre-defined fixed appointments
+
+## 📅 Time Restrictions (NEW)
+
+The system now supports advanced time restrictions for lecturers:
+
+### Quick Example
+```python
+from time_restrictions import LecturerTimeRestrictionBuilder
+
+# Define when a lecturer is available
+availability = (LecturerTimeRestrictionBuilder("L1")
+    .add_available_date_range("2025-01-15", "2025-02-15", 
+                             morning=True, afternoon=False)
+    .add_unavailable_date("2025-01-20")
+    .build())
+```
+
+### Documentation
+- **Quick Start**: See [QUICK_START.md](QUICK_START.md) for a 5-minute introduction
+- **Complete Guide**: See [TIME_RESTRICTIONS_GUIDE.md](TIME_RESTRICTIONS_GUIDE.md) for full documentation
+- **Examples**: Run `python example_time_restrictions.py` for working examples
+- **Implementation Details**: See [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)
 
 ## License
 

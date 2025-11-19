@@ -35,17 +35,17 @@ class SchedulerConstraints:
         """Check if room capacity meets subject requirements."""
         return room.capacity >= subject.min_students
     
-    def validate_room_availability(self, room: Room, time_slot: TimeSlot) -> bool:
+    def validate_room_availability(self, room: Room, time_slot: TimeSlot, check_date=None) -> bool:
         """Check if room is available at the given time."""
         if room.id not in self.room_availability:
             return True  # No constraints means available
-        return self.room_availability[room.id].is_available(time_slot)
+        return self.room_availability[room.id].is_available(time_slot, check_date)
     
-    def validate_lecturer_availability(self, lecturer: Lecturer, time_slot: TimeSlot) -> bool:
+    def validate_lecturer_availability(self, lecturer: Lecturer, time_slot: TimeSlot, check_date=None) -> bool:
         """Check if lecturer is available at the given time."""
         if lecturer.id not in self.lecturer_availability:
             return True  # No constraints means available
-        return self.lecturer_availability[lecturer.id].is_available(time_slot)
+        return self.lecturer_availability[lecturer.id].is_available(time_slot, check_date)
     
     def validate_no_conflicts(self, timetable: Timetable, new_entry: ScheduleEntry) -> bool:
         """Check if adding the new entry would create conflicts."""
@@ -73,7 +73,8 @@ class TimetableScheduler:
         subjects: List[Subject],
         rooms: List[Room],
         blocks: List[Block],
-        weeks: int = 1
+        weeks: int = 1,
+        start_date = None
     ) -> Timetable:
         """
         Generate a timetable for the given subjects, rooms, and time blocks.
@@ -83,11 +84,12 @@ class TimetableScheduler:
             rooms: List of available rooms
             blocks: List of time blocks available for scheduling
             weeks: Number of weeks to schedule
+            start_date: Starting date for the timetable (optional, for date-based restrictions)
             
         Returns:
             A Timetable object with scheduled entries
         """
-        timetable = Timetable(weeks=weeks)
+        timetable = Timetable(weeks=weeks, start_date=start_date)
         
         # First, add all fixed entries
         for fixed_entry in self.constraints.fixed_entries:
@@ -130,12 +132,16 @@ class TimetableScheduler:
             block = random.choice(blocks)
             room = random.choice(suitable_rooms)
             
+            # Calculate the actual date for this week and day
+            scheduled_date = timetable.get_date_for_entry(week, block.time_slot.day) if timetable.start_date else None
+            
             # Create a potential entry
             entry = ScheduleEntry(
                 subject=subject,
                 room=room,
                 block=block,
                 week=week,
+                scheduled_date=scheduled_date,
                 is_fixed=False
             )
             
@@ -151,13 +157,13 @@ class TimetableScheduler:
         """Validate that an entry meets all constraints."""
         # Check room availability
         if not self.constraints.validate_room_availability(
-            entry.room, entry.block.time_slot
+            entry.room, entry.block.time_slot, entry.scheduled_date
         ):
             return False
         
         # Check lecturer availability
         if not self.constraints.validate_lecturer_availability(
-            entry.subject.lecturer, entry.block.time_slot
+            entry.subject.lecturer, entry.block.time_slot, entry.scheduled_date
         ):
             return False
         
@@ -181,11 +187,15 @@ class TimetableScheduler:
         Returns:
             Tuple of (success: bool, message: str)
         """
+        # Calculate the actual date for this week and day
+        scheduled_date = timetable.get_date_for_entry(week, block.time_slot.day) if timetable.start_date else None
+        
         entry = ScheduleEntry(
             subject=subject,
             room=room,
             block=block,
             week=week,
+            scheduled_date=scheduled_date,
             is_fixed=False
         )
         
@@ -193,10 +203,10 @@ class TimetableScheduler:
         if not self.constraints.validate_room_capacity(subject, room):
             return False, f"Room capacity ({room.capacity}) is less than minimum students ({subject.min_students})"
         
-        if not self.constraints.validate_room_availability(room, block.time_slot):
+        if not self.constraints.validate_room_availability(room, block.time_slot, scheduled_date):
             return False, f"Room {room.name} is not available at this time"
         
-        if not self.constraints.validate_lecturer_availability(subject.lecturer, block.time_slot):
+        if not self.constraints.validate_lecturer_availability(subject.lecturer, block.time_slot, scheduled_date):
             return False, f"Lecturer {subject.lecturer.name} is not available at this time"
         
         if not self.constraints.validate_no_conflicts(timetable, entry):
